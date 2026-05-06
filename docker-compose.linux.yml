@@ -1,0 +1,30 @@
+services:
+  steam-linux-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.linux
+      args:
+        EXTRA_APT_PACKAGES: ""
+    restart: unless-stopped
+
+    env_file:
+      - game.linux.env
+
+    volumes:
+      - "/steam-linux/steamcmd:/steam/steamcmd"
+      - "/steam-linux/steamlibrary/steamapps/common/${SERVER_DIR_NAME:?SERVER_DIR_NAME is required}:/steam/steamlibrary/steamapps/common/${SERVER_DIR_NAME}"
+      - "/steam-linux/home/${SERVER_DIR_NAME}:/steam/home"
+      - "/steam-linux/logs/${SERVER_DIR_NAME}:/steam/logs/${SERVER_DIR_NAME}"
+      - "/steam-linux/locks:/steam/locks"
+
+    ports:
+      - "27015:27015/udp"
+      - "27015:27015/tcp"
+
+    stdin_open: true
+    tty: true
+
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 100000

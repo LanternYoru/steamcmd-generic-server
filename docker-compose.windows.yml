@@ -1,0 +1,37 @@
+services:
+  steam-windows-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.windows
+      args:
+        EXTRA_APT_PACKAGES: ""
+
+    restart: unless-stopped
+
+    env_file:
+      - game.windows.env
+
+    volumes:
+      - "/steam-windows/steamcmd:/home/steam/steamcmd"
+      - "/steam-windows/home/${SERVER_DIR_NAME:?SERVER_DIR_NAME is required}:/home/steam"
+      - "/steam-windows/steamlibrary/steamapps/common/${SERVER_DIR_NAME}:/steam/steamlibrary/steamapps/common/${SERVER_DIR_NAME}"
+      - "/steam-windows/wineprefixes/${SERVER_DIR_NAME}:/steam/wineprefixes/${SERVER_DIR_NAME}"
+      - "/steam-windows/protonprefixes/${SERVER_DIR_NAME}:/steam/protonprefixes/${SERVER_DIR_NAME}"
+      - "/steam-windows/logs/${SERVER_DIR_NAME}:/steam/logs/${SERVER_DIR_NAME}"
+
+      # Proton 可选：
+      # - "/steam-proton:/proton:ro"
+
+    ports:
+      # 单端口游戏可以直接用 SERVER_PORT。
+      # 多端口游戏需要在这里手动继续加端口映射。
+      - "${SERVER_PORT:-27015}:${SERVER_PORT:-27015}/udp"
+      - "${SERVER_PORT:-27015}:${SERVER_PORT:-27015}/tcp"
+
+    stdin_open: true
+    tty: true
+
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 100000

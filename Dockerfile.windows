@@ -1,0 +1,83 @@
+FROM cm2network/steamcmd:root
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG EXTRA_APT_PACKAGES=""
+RUN sed -i 's|http://deb.debian.org/debian|http://mirrors.aliyun.com/debian|g' /etc/apt/sources.list.d/debian.sources \
+    && sed -i 's|http://deb.debian.org/debian-security|http://mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list.d/debian.sources \
+    && dpkg --add-architecture i386 \
+    && apt-get update
+RUN dpkg --add-architecture i386 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        bash \
+        tini \
+        gosu \
+        procps \
+        util-linux \
+        locales \
+        unzip \
+        p7zip-full \
+        xvfb \
+        xauth \
+        winbind \
+        cabextract \
+        fonts-wine \
+        wine \
+        wine64 \
+        wine32:i386 \
+        libc6-i386 \
+        lib32gcc-s1 \
+        lib32stdc++6 \
+        libstdc++6 \
+        libcurl4 \
+        libssl3 \
+        zlib1g \
+        libatomic1 \
+        ${EXTRA_APT_PACKAGES} \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
+    && locale-gen
+
+RUN mkdir -p \
+        /steam/steamlibrary/steamapps/common \
+        /steam/wineprefixes \
+        /steam/protonprefixes \
+        /steam/logs \
+        /scripts \
+    && chown -R steam:steam /steam /home/steam
+
+COPY entrypoint.windows.sh /entrypoint.sh
+COPY servermanager.windows.sh /scripts/servermanager.windows.sh
+
+RUN chmod +x /entrypoint.sh /scripts/servermanager.windows.sh
+
+ENV STEAM_ROOT=/steam \
+    STEAMCMD_DIR=/home/steam/steamcmd \
+    STEAM_LIBRARY=/steam/steamlibrary \
+    HOME=/home/steam \
+    USER=steam \
+    LOGNAME=steam \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8 \
+    WINEARCH=win64 \
+    WINEDEBUG=-all \
+    DISPLAY=:99 \
+    STEAM_LOGIN=anonymous \
+    STEAMCMD_FORCE_PLATFORM=windows \
+    UPDATE_ON_START=1 \
+    VALIDATE=0 \
+    COMPAT_LAYER=wine \
+    WINE_USE_XVFB=1 \
+    TAIL_LOG_ON_START=0 \
+    TAIL_LOG_LINES=80 \
+    RESTART_ON_CRASH=1 \
+    RESTART_DELAY=10 \
+    PUID=1000 \
+    PGID=1000
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
+CMD ["/scripts/servermanager.windows.sh"]

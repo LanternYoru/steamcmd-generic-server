@@ -1,0 +1,54 @@
+FROM debian:bookworm-slim
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG EXTRA_APT_PACKAGES=""
+RUN sed -i 's|http://deb.debian.org/debian|http://mirrors.aliyun.com/debian|g' /etc/apt/sources.list.d/debian.sources \
+    && sed -i 's|http://deb.debian.org/debian-security|http://mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list.d/debian.sources \
+    && dpkg --add-architecture i386 \
+    && apt-get update
+RUN dpkg --add-architecture i386 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        bash \
+        tini \
+        gosu \
+        procps \
+        util-linux \
+        libc6-i386 \
+        lib32gcc-s1 \
+        lib32stdc++6 \
+        libstdc++6 \
+        libcurl4 \
+        libssl3 \
+        zlib1g \
+        libatomic1 \
+        ${EXTRA_APT_PACKAGES} \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -u 1000 -s /bin/bash steam \
+    && mkdir -p \
+        /steam/steamcmd \
+        /steam/steamlibrary/steamapps/common \
+        /steam/home \
+        /steam/logs \
+        /steam/locks \
+    && chown -R steam:steam /steam
+
+COPY entrypoint.linux.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENV STEAM_ROOT=/steam \
+    STEAMCMD_DIR=/steam/steamcmd \
+    STEAM_LIBRARY=/steam/steamlibrary \
+    HOME=/steam/home \
+    STEAM_LOGIN=anonymous \
+    UPDATE_ON_START=1 \
+    VALIDATE=0 \
+    RESTART_ON_CRASH=0 \
+    RESTART_DELAY=10
+
+VOLUME ["/steam"]
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
