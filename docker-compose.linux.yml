@@ -18,8 +18,11 @@ services:
       - "/steam-linux/locks:/steam/locks"
 
     ports:
-      - "27015:27015/udp"
-      - "27015:27015/tcp"
+      # 单端口游戏可以直接用 SERVER_PORT。
+      # 多端口游戏需要在这里手动继续加端口映射。
+      - "${SERVER_PORT:-27015}:${SERVER_PORT:-27015}/udp"
+      - "${SERVER_PORT:-27015}:${SERVER_PORT:-27015}/tcp"
+
 
     stdin_open: true
     tty: true
